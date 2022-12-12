@@ -1,0 +1,543 @@
+
+\documentclass[a4paper, 12pt]{article}
+\usepackage{a4wide}
+\usepackage {amsmath}
+\usepackage{amssymb}
+\usepackage {graphicx}
+\usepackage[utf8]{inputenc} 
+\usepackage[french]{babel}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{lastpage}
+\usepackage{extramarks}
+\usepackage{chngpage}
+\usepackage{soul}
+\usepackage{algorithmicx} 
+\usepackage{algpseudocode} 
+\usepackage{multicol}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{graphicx,float,wrapfig}
+\usepackage{ifthen}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{esint}
+\usepackage{bbm}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{epsfig}
+\usepackage{pgf,tikz}
+\usetikzlibrary{arrows}
+\usepackage{braket}
+\usepackage{MnSymbol,wasysym}
+\usepackage{marvosym}
+\usepackage{dsfont}
+\usepackage{stmaryrd}
+\usepackage{amsopn}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{framed}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\lhead{} 
+\chead{} 
+\rhead{\bfseries B.E. E.M.} 
+\lfoot{J.C. Toussaint et L. Bastard - Phelma}
+%\cfoot{J.C. Toussaint} 
+%\rfoot{\thepage}
+
+\def\cotan{\qopname\relax o{cotan}}
+
+% This is the color used for MATLAB comments below
+\definecolor{MyDarkGreen}{rgb}{0.0,0.4,0.0}
+
+% For faster processing, load Matlab syntax for listings
+\lstloadlanguages{Matlab}%
+\lstset{language=Matlab,                        % Use MATLAB
+        frame=single,                           % Single frame around code
+        basicstyle=\small\ttfamily,             % Use small true type font
+        keywordstyle=[1]\color{Blue}\bf,        % MATLAB functions bold and blue
+        keywordstyle=[2]\color{Purple},         % MATLAB function arguments purple
+        keywordstyle=[3]\color{Blue}\underbar,  % User functions underlined and blue
+        identifierstyle=,                       % Nothing special about identifiers
+                                                % Comments small dark green courier
+        commentstyle=\usefont{T1}{pcr}{m}{sl}\color{MyDarkGreen}\small,
+        stringstyle=\color{Purple},             % Strings are purple
+        showstringspaces=false,                 % Don't put marks in string spaces
+        tabsize=5,                              % 5 spaces per tab
+        %
+        %%% Put standard MATLAB functions not included in the default
+        %%% language here
+        morekeywords={xlim,ylim,var,alpha,factorial,poissrnd,normpdf,normcdf},
+        %
+        %%% Put MATLAB function parameters here
+        morekeywords=[2]{on, off, interp},
+        %
+        %%% Put user defined functions here
+        morekeywords=[3]{FindESS, homework_example},
+        %
+        morecomment=[l][\color{Blue}]{...},     % Line continuation (...) like blue comment
+        numbers=left,                           % Line numbers on left
+        firstnumber=1,                          % Line numbers start with line 1
+        numberstyle=\tiny\color{Blue},          % Line numbers are blue
+        stepnumber=5                            % Line numbers go in steps of 5
+        }
+
+% Includes a MATLAB script.
+% The first parameter is the label, which also is the name of the script
+%   without the .m.
+% The second parameter is the optional caption.
+\newcommand{\matlabscript}[2]
+  {\begin{itemize}\item[]\lstinputlisting[caption=#2,label=#1]{#1.m}\end{itemize}}
+
+\pagestyle{fancy}
+
+\newcounter{nquestion}
+\newenvironment{question}[1]{
+	\refstepcounter{nquestion}
+	\vspace{2mm}\\
+	\noindent \underline{Question \thenquestion}~:\vspace{-3mm}
+	\begin{leftbar} \noindent #1}
+	{\end{leftbar} \vspace{2mm}\\}
+	
+\newcommand\fig[3]{\begin{figure}[h]
+\begin{center}
+\begin{tabular}{cc}
+\includegraphics[width=#2cm]{#1.pdf}
+\end{tabular}
+\caption{#3}
+\label{fig:#1}
+\end{center}\end{figure}}
+
+\begin{document}
+
+\bibliographystyle{alpha}
+
+\title{B. E. d'électromagnétisme \\ Guide d'ondes diélectrique}
+
+%\author{Jean-Christophe Toussaint - Lionel Bastard\\
+%  Phelma\\
+%\texttt{jean-christophe.toussaint@phelma.grenoble-inp.fr}
+%}
+\date{\today}
+\date{\vspace{-10ex}}
+ 
+\maketitle
+
+ \fbox{\parbox{84ex} {
+ \begin{center} 
+ Rendu : rapport et programmes fournis en annexe
+ \newline\newline
+{\it La recopie même partielle du rapport ou des codes d'un autre groupe est interdite et est
+considérée comme une tentative de fraude appelée plagiat.}\end{center}
+}}
+
+\vspace{1cm}
+
+Les guides d'ondes optiques sous la forme de fibres, rubans, ou canaux optiques réalisés dans différents matériaux (silice, LiNbO3, silicium...)
+prennent une place de plus en plus importante dans les dispositifs optiques passifs (transmission du signal, séparateurs, routeurs optiques...) et actifs (LEDs, lasers, amplificateurs optiques, ...).
+
+Le but du projet est de développer un solveur de modes en différences finies / volumes finis et de  caractériser par la simulation, les modes de propagation guidée dans des guide d'ondes diélectriques. Pour s'assurer de la validité de ce développement numérique, nous comparerons les résultats issus du solveur de mode développé avec les expressions analytiques, disponibles dans le cas de guides d'ondes simples.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Equations locales}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Dans ce projet, on suppose que la géométrie du guide est invariante  selon Oz. Par ailleurs, on suppose que les matériaux diélectriques constituant le guide d'ondes sont linéaires, isotropes et sans pertes. On suppose que la direction de propagation de l'onde est Oz. En régime harmonique, les champs électriques et magnétiques complexes s'expriment alors selon la forme suivante:
+
+\begin{equation}
+\left\{
+  \begin{array}{lcr}
+  \textbf{E}(x, y, z, t) &=& (E_x, E_y, E_z) \exp \big(j(\omega t - \beta z) \big) \\
+  
+\textbf{H}(x, y, z, t) &=& (H_x, H_y, H_z) \exp \big(j(\omega t - \beta z) \big)
+  \end{array}
+\right.
+\label{fields}
+\end{equation}
+et sont reliés au champ de déplacement et à l'induction magnétique par $\textbf{D} = \epsilon \textbf{E}$ et $\textbf{B} = \mu \textbf{H}$, dans l'approximation des milieux linéaires. En se limitant aux milieux diélectriques qui nous intéressent dans ce projet, on a $\epsilon(x, y) = n(x, y)^2\;  \epsilon_0$ et $\mu(x, y)=\mu_0$, qui sont toutes des grandeurs scalaires réelles.
+
+\subsection{Equations de Maxwell}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+En l'absence de sources de courant et de charges libres, les champs $\textbf{E}$ et $\textbf{H}$ sont gouvernés par les équations de Maxwell suivantes :
+
+\begin{equation}
+\left\{
+\renewcommand*{\arraystretch}{1.2}
+  \begin{array}{lcr}
+  \nabla  \cdot \textbf{D}=0 \quad, \quad \nabla  \cdot \textbf{B}=0 \\
+  \nabla \times \textbf{E} = -\frac{\partial \textbf{B}}{\partial t} =-j \omega \; \mu_0 \textbf{H} \\
+\nabla \times \textbf{H} = +\frac{\partial \textbf{D}}{\partial t} = +j \omega \; n(x, y)^2\;  \epsilon_0 \textbf{E} 
+  \end{array}
+\right.
+\label{maxwell}
+\end{equation}
+
+\subsection{Equations de Helmholtz}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+On se place dans un premier temps dans un matériau homogène d'indice optique $n$.
+\begin{question}
+Montrer, en utilisant les équations de Maxwell et les hypothèses énoncées
+précédemment, que les champs sont gouvernés par les équations de Helmholtz suivantes :
+
+\begin{equation}
+  \partial_x^2 \textbf{E} + \partial_y^2 \textbf{E} + n^2\; k_0^2\;  \textbf{E}  = \beta^2 \textbf{E} 
+\label{helmE}
+\end{equation}
+et
+\begin{equation}
+  \partial_x^2 \textbf{H} + \partial_y^2 \textbf{H} + n^2\; k_0^2\; \textbf{H}  = \beta^2 \textbf{H}
+\label{helmH}
+\end{equation}
+où $k_0=\omega/c=2 \pi/\lambda$.
+\end{question} 
+
+Ces équations locales restent valides pour des guides composés de différents milieux homogènes. Il faut toutefois en plus tenir compte des relations
+de continuité des composantes normales de $ \textbf{D}$ et de $ \textbf{B}$
+et des composantes tangentielles de $\textbf{E}$ et de $ \textbf{H}$ à l'interface entre deux milieux.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Guide planaire en polarisation TE}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\definecolor{ffqqqq}{rgb}{1,0,0}
+\definecolor{uuuuuu}{rgb}{0.27,0.27,0.27}
+\begin{figure}[!h]
+\centering
+\fbox{
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=1.0cm,y=1.0cm, scale=0.4]
+\clip(-10.,-5.) rectangle (12.,5.);
+\draw [->,line width=2.pt] (-10.,0.) -- (10.,0.);
+\draw (10,0.6048860606765818) node[anchor=north west] {X};
+\draw [line width=2.pt,color=ffqqqq] (-4.,-5.) -- (-4.,5.);
+\draw [line width=2.pt,color=ffqqqq] (4.,-5.) -- (4.,5.);
+\draw(0.,-2.) circle (0.5cm);
+\draw (0.5634732402208465,-2) node[anchor=north west] {Z};
+\draw (-2.8317319211779384,2.3) node[anchor=north west] {diélectrique};
+\draw (-8.073729890100066,2.3) node[anchor=north west] {air};
+\draw (6.005471209142974,2.3) node[anchor=north west] {air};
+\draw (-5.5,0) node[anchor=north west] {-a};
+\draw (4,0) node[anchor=north west] {a};
+\begin{scriptsize}
+\draw [fill=black] (0.,-2.) circle (3.5pt);
+%\draw[color=black] (-0.1739937742592548,0.12171801670686017) node {$c$};
+\end{scriptsize}
+\end{tikzpicture}
+}
+\caption[]{Exemple de guide diélectrique planaire}%
+\label{fig:chemin}%
+\end{figure}
+
+Les guides planaires sont des structures dans lesquelles l'indice varie dans une seule dimension. Nous choisissons ici que l'indice varie selon Ox, la structure est donc invariante selon Oy (les dérivées selon y dans les équations présentées précédemment seront donc nulles !). Un exemple de guide d'ondes planaire est représenté sur la figure \ref{fig:chemin}. On peut démontrer (voir le cours) que les guides diélectriques planaires possèdent deux types de solutions, notées TE et TM. Les modes TE (Transverse Electrique) sont définis par le fait que les composantes $E_z, \; E_x$ et $ H_y$ du champ magnétique sont nulles.
+
+\subsection{Résolution analytique}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{question}
+Pour les modes TE, écrire les conditions aux limites pour les composantes non-nulles du champ électromagnétique aux interfaces air/diélectrique. Montrer alors que $\textbf{E}$ et $ \textbf{H}$ sont continus, et que par conséquent le champ $E_y$ ainsi que sa dérivée selon Ox sont continus.
+\end{question}
+
+Dans la suite de cette section concernant les modes TE, on notera simplement $E$ la composante du champ électrique selon Oy. Les modes scalaires $E(x)$ sont solutions de  l'équation \eqref{helmE} que l'on projette selon Oy et réécrit  en multipliant chacun de ses membres par $\frac{1}{k_0^2}=\left(\frac{\lambda}{2 \pi} \right)^2$.
+\begin{equation}
+\left(\frac{\lambda}{2 \pi} \right)^2 \left(\partial_x^2 \; E \right)  + n^2 \; E=n_{ef\!f}^2 \; E
+\label{Helm}
+\end{equation}
+
+\noindent où $n_{ef\!f} = \left(\frac{\lambda}{2 \pi} \right) \beta$ est appelé l'indice effectif de propagation du mode. On admettra que les modes de propagation guidés respectent la contrainte $n_{ef\!f} \in ]\min \{n \}, \max \{n \}]$ (ce qui est vrai uniquement pour les guides diélectriques).
+
+On veut modéliser la propagation guidée d'une onde dans un guide planaire constitué d'une couche mince diélectrique d'indice $n_2$ et d'épaisseur $2a$, placée entre deux couches semi-infinies d'indices $n_1$ et $n_3$. Cette structure simple a l'avantage de présenter une solution analytique facile à écrire et nous permettra de valider le modèle numérique développé ensuite.\\
+
+Les solutions de l'équation \eqref{Helm} dans les différents milieux sont des fonctions exponentielles. Puisque l'on s'intéresse uniquement aux modes guidés au voisinage de la couche mince, on choisit pour décrire le mode les expressions suivantes :
+\begin{equation} \label{eq:ETE}
+\left\{
+  \begin{array}{lcl}
+E(x)=A_1\exp \big(-k_1 x \big)  & \text{pour} &  x>a \\
+E(x)=A_2\cos(k_2 x + \phi)  & \text{pour} & |x|<a \\
+E(x)=A_3\exp \big(+k_3 x \big)   &\text{pour}  & x<-a
+  \end{array}
+\right.
+\end{equation}
+
+\begin{question}
+En utilisant l'équation \eqref{Helm}, donner les expressions de $k_1$, $k_2$ et $k_3$.
+\end{question}
+
+En appliquant les conditions de continuité du champ $E$ aux interfaces, on obtient les formes suivantes pour le champs électrique :
+\begin{equation} \label{formeTE}
+\left\{
+\renewcommand*{\arraystretch}{1.2}
+  \begin{array}{lcl}
+E(x)=A \cos(k_2 a+\phi) \exp \big(k_1 a \big) \exp \big(-k_1 x \big)  & \text{pour} & x>a \\
+E(x)=A \cos(k_2 x+\phi) & \text{pour} & |x|<a \\
+E(x)=A \cos(k_2 a-\phi) \exp \big(k_3 a \big) \exp \big(+k_3 x \big)  & \text{pour} & x<-a
+  \end{array}
+\right.
+\end{equation}
+La valeur de $\phi$ provient des équations de continuité de $H_z$, donc de la dérivée de $E$ et s'écrit :
+\begin{equation}
+    \phi = k_2a-\arctan\left(\frac{k_3}{k_2}\right) + n\pi
+\end{equation}
+avec $n$ un entier. La valeur de cet entier est sans importance et nous prendrons n=0 pour la suite. Notons cependant que si $n$ est impair, l'allure du mode obtenu est "retourné" par rapport à une valeur de $n$ paire, mais ces deux représentations correspondent physiquement au même mode.
+
+Pour finir, la continuité de $H_z$ permet également d'établir l'équation de dispersion suivante :
+\begin{equation}
+2k_2a - \arctan\left(\frac{k_3}{k_2}\right) - \arctan\left(\frac{k_1}{k_2}\right) = m\pi
+\label{Dispersion}
+\end{equation}
+avec $m$ un entier positif ou nul correspondant au numéro du mode.
+
+\begin{question}
+On choisir d'étudier le cas du guide planaire symétrique ($n_1=n_3$). En prenant $a$=300 nm, $\lambda=1 \mu m$ $n_1 = 1$ et $n_2=3.5$, tracer avec Matlab la relation de dispersion : $LHS = f(n_{ef\!f})$, où $LHS$ correspond au membre de gauche de l'équation \ref{Dispersion}. A partir du graphique obtenu, déduisez le nombre de modes guidés supportés par la structure étudiée. Notez que dans le cas des guides diélectriques, l'indice effectif est compris entre max($n_1$,$n_3$) et $n_2$. Vérifiez ce qu'il se passe en dehors de cet intervalle.
+\end{question}
+
+\begin{question}
+Résolvez numériquement l'équation \ref{Dispersion} en utilisant la fonction Matlab {\tt fzero}, de manière à trouver les valeurs de l'indice effectif $n_{ef\!f}$ pour chaque mode guidé (défini par son numéro $m$). La fonction {\tt fzero} résout l'équation non-linéaire par la méthode de la tangente, dans un intervalle contenant la racine :  {\tt y=fzero(f, [xmin, xmax])}. Attention, {\tt f} doit être une fonction anonyme comme par exemple : {\tt \verb|f=@(x) x.^2-1;|}
+
+ \end{question}
+ 
+
+\begin{question}
+Pour chaque valeur de $n_{ef\!f}$, tracer le mode guidé associé (équation \ref{formeTE}). Vérifier à l'oeil sur les graphes obtenus que le champ électrique et sa dérivée sont continus. \emph{En bonus, vous pouvez vérifier que la dérivée du champ E(x) n'est pas continue aux interfaces si vous utilisez une mauvaise valeur d'indice effectif.} 
+\end{question}
+
+\subsection{Modélisation numérique d'un multi-couche}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Le domaine de calcul  de longueur finie $L_x$ est discrétisé en volumes finis réguliers (Fig. \ref{fig:grille1D}), c'est-à-dire en un ensemble de segments jointifs de même longueur $\Delta x$. Les noeuds d'échantillonnage des champs et de l'indice se trouvent sur un réseau régulier comme en différences finies. Chaque noeud est par contre, localisé au centre d'un segment. La grille comporte $N_x$ noeuds selon Ox. Les interfaces sont situées dans le plan médian entre deux noeuds.
+
+\definecolor{qqqqff}{rgb}{0.,0.,0.}
+\definecolor{cqcqcq}{rgb}{0.7529411764705882,0.7529411764705882,0.7529411764705882}
+\begin{figure}[!h]
+\centering
+\fbox{
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=1.0cm,y=1.0cm, scale=1]
+\draw [color=cqcqcq,, xstep=1.0cm,ystep=1.0cm] (-3.,2.) grid (11.,4.);
+\clip(-3.,+2.) rectangle (11.,4.);
+\draw [line width=2pt] (-2.,2.8) -- (-2.,3.2);
+\draw [line width=2pt] (0.,2.8) -- (0.,3.2);
+\draw [line width=2pt,color=ffqqqq] (2.,2) -- (2.,4);
+\draw [line width=2pt] (4.,2.8) -- (4.,3.2);
+\draw [line width=2pt] (6.,2.8) -- (6.,3.2);
+\draw [line width=2pt,color=ffqqqq] (8.,2.) -- (8.,4);
+\draw [line width=2pt] (10.,2.8) -- (10.,3.2);
+
+\draw [line width=1.2pt] (-3.,3) -- (11.,3.);
+\begin{scriptsize}
+\draw [fill=qqqqff] (-1.,3.) circle (4.5pt);
+\draw [fill=qqqqff] (3.,3.) circle (4.5pt);
+\draw[color=qqqqff] (3.2932151660286837,3.267988983206664) node {ix};
+\draw [fill=qqqqff] (1.,3.) circle (4.5pt);
+\draw[color=qqqqff] (1.354111476239333,3.267988983206664) node {ix-1};
+\draw [fill=qqqqff] (5.,3.) circle (4.5pt);
+\draw[color=qqqqff] (5.358098554615181,3.267988983206664) node {ix+1};
+\draw [fill=qqqqff] (7.,3.) circle (4.5pt);
+\draw [fill=qqqqff] (9.,3.) circle (4.5pt);
+\draw [fill=qqqqff] (-3.,3.) circle (4.5pt);
+\draw [fill=qqqqff] (11.,3.) circle (4.5pt);
+
+\draw[color=qqqqff] (0.,2.25) node {$n_1$};
+\draw[color=qqqqff] (5.,2.25) node {$n_2$};
+\draw[color=qqqqff] (9.,2.25) node {$n_3$};
+
+\end{scriptsize}
+\end{tikzpicture}
+}
+\caption[]{Discrétisation en  volumes finis 1D d'un empilement de trois couches diélectriques}%
+\label{fig:grille1D}%
+\end{figure}
+
+\begin{question} 
+Quel est l'intérêt de placer ainsi les noeuds d'échantillonnage par rapport aux interfaces entre milieux diélectriques ?
+\end{question}
+
+\begin{question}
+On numérote de manière unique les noeuds dans $\llbracket 1, N_x  \rrbracket$. 
+Quelle est l'abscisse réelle d'un noeud de coordonnée entière $ix \in \mathbb{N}$ en plaçant,
+pour simplifier, {\bf l'origine des coordonnées à gauche}.
+\end{question}
+    
+\begin{question} \label{q:laplacien}
+Donner l'expression discrète en différences finies, de l'opérateur Laplacien appliqué à $E(x)$ en un point {\bf intérieur} $(x)$ de la grille régulière. {\it Indication} : faire un développement de Taylor de $E(x)$ à partir des premiers voisins.
+On utilisera le développement limité suivant, pour une fonction à une variable :
+  \begin{equation} 
+ E(x+dx) = E(x) + dx\; \partial_x E + \frac{1}{2} (dx\;  \partial_x)^2 \; E+
+ \vartheta(dx)^3
+\end{equation}
+où $dx$ sont des éléments infinitésimaux. Les dérivées partielles étant évaluées en $x$. 
+\end{question}
+
+\begin{question}
+Montrer que l'on peut écrire l'équation  \eqref{Helm}  après discrétisation, sous la forme matricielle :
+\begin{equation}
+\sum_j A_{i, j} \; E_j^m = n_{ef\!f, m}^2 \; E_i^m 
+\label{HelmDis}
+\end{equation}
+avec $i \in \llbracket 1, N \rrbracket$. Préciser la forme générale de la matrice $A$ sans se soucier des bords.
+\end{question}
+  
+\begin{question}
+On tient maintenant compte de l'annulation du champ $E$ sur les noeuds du bord.
+En fixant $N_x=4$, donner précisément le remplissage de $A$.
+\end{question}
+
+\subsection{Développement du solveur de modes TE}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+On vous demande de récupérer sur Chamillo les sources du projet Matlab qui constituent un embryon de solveur de modes en volumes finis. Le fichier Matlab {\tt WGgen.m} définit la fonction {\tt WGgen}, qui permet de discrétiser un guide d'ondes en volumes finis 1D.  Dans l'exemple fourni, on définit d'abord une boite d'air s'étendant sur $[-5 \mu m, 5 \mu m]$ grâce à la fonction {\tt grid} qui retourne une structure de données {\tt g}. Le pas de la grille est stocké dans $g.dx$. Chaque noeud de la discrétisation est repéré par l'entier $ix$ et son abscisse réelle (en $\mu m$) est donnée par $g.x(ix)$. L'indice optique dans la maille volume fini associée à  $ix$ est donné par $g.indice(ix)$.
+
+La couche mince pouvant être décrite par un segment, on définit d'abord
+les abscisses de ses extrémités que l'on place dans un tableau noté $region$ dans l'exemple.
+On l'insère ensuite dans la grille, grâce à la fonction  {\tt insert} en précisant en plus son indice
+de réfraction.
+
+\matlabscript{WGgencut1d}{programme de discrétisation d'un guide d'onde}
+
+\begin{question}
+Exécuter le générateur de guide {\tt WGgen}, puis montrer qu'il est possible de générer des multicouches d'indices et de stuctures différents.
+\end{question}
+
+Vous allez à présent développer votre solveur de modes, solutions de l'équation aux valeurs propres \eqref{Helm}.
+
+\begin{question}
+Développer une fonction  {\tt A=build\_A(g)} permettant de remplir la matrice creuse $A$ associée à l'équation aux valeurs propres pour une grille de taille $N_x$.  On utilise la fonction Matlab {\tt spdiags} pour créer cette matrice creuse.
+\end{question}
+
+\begin{question} Développer une fonction  {\tt g=TE\_solve(g, m, n\_init)} permettant de calculer un sous-ensemble de $m$ valeurs propres (réelles), les plus proches voisines d'une valeur d'indice fixée par l'utilisateur, ainsi que les $m$ modes propres associés. Pour ce faire, mettre en oeuvre la fonction  {\tt eigs} fournie par Matlab.
+\end{question}
+
+\begin{question} Comparer les modes de propagation normalisés et les valeurs de l'indice effectif $n_{ef\!f}$ obtenus à ceux calculés analytiquement pour le guide planaire symétrique. On prendra un domaine de calcul de taille bien plus grande que l'épaisseur de la couche. Expliquez pourquoi.
+\end{question}
+
+\begin{question} Faites varier la taille du domaine de calcul pour voir son influence sur l'indice effectif obtenu. Étudier également l'influence du pas de réseau sur les résultats de simulation.
+\end{question}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Modes TM d'un guide planaire}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Solutions analytiques}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+En polarisation TM, les composantes du champ non-nulles sont $E_x$, $E_z$ et $H_y$. Dans la très grande majorité des cas pratiques, l'amplitude de la composante $E_z$ est négligeable par rapport à celle de $E_x$. On souhaite donc calculer $E_x$, que l'on nommera par la suite $E$ (attention, $E$ n'a donc pas la même signification dans la partie TE et dans la partie TM !). La composante $E_x$ du champ électrique étant normale aux interfaces, elle sera discontinue au niveau des interfaces, ce qui va modifier les équations par rapport au cas TE. Les composantes non-nulles du champ électromagnétique peuvent s'exprimer en fonction de $E_x$ grâce aux équations de Maxwell :
+
+\begin{align}
+    E_x &= H_y\frac{k_0n_{ef\!f}}{w\epsilon} \label{eq:hy} \\
+    \frac{\partial E_x}{\partial x} &= jk_0 n_{ef\!f} E_z \label{eq:ez} 
+\end{align}
+
+L'expression des composantes qui ne subissent pas de discontinuité sera la même que pour la polarisation TE. On peut donc réutiliser les expressions \ref{formeTE} en remplaçant $E$ par $H_y$. En utilisant la relation \ref{eq:hy} entre $E_x$ et $H_y$, on obtient les expressions suivantes pour la forme du champ $E(x)$ :
+\begin{equation} \label{formeTM}
+\left\{
+\renewcommand*{\arraystretch}{1.2}
+  \begin{array}{lcl}
+E(x)=A \frac{n_2^2}{n_1^2}\cos(k_2 a+\phi) \exp \big(k_1 a \big) \exp \big(-k_1 x \big)  & \text{pour} & x>a \\
+E(x)=A \cos(k_2 x+\phi) & \text{pour} & |x|<a \\
+E(x)=A \frac{n_2^2}{n_3^2}\cos(k_2 a-\phi) \exp \big(k_3 a \big) \exp \big(+k_3 x \big)  & \text{pour} & x<-a
+  \end{array}
+\right.
+\end{equation}
+La valeur de $\phi$ provient des équations de continuité de $E_z$, donc de $\frac{\partial E_x}{\partial x}$ et s'écrit :
+\begin{equation}
+    \phi = k_2a-\arctan\left(\frac{n_2^2k_3}{n_3^2k_2}\right) + n\pi
+\end{equation}
+avec $n$ un entier. Comme dans le cas TE, la valeur de cet entier est sans importance et nous prendrons n=0 pour la suite.
+
+Pour finir, la continuité de $\frac{\partial E_x}{\partial x}$ permet également d'établir l'équation de dispersion suivante :
+\begin{equation}
+2k_2a - \arctan\left(\frac{n_2^2k_3}{n_3^2k_2}\right) - \arctan\left(\frac{n_2^2k_1}{n_1^2k_2}\right) = m\pi
+\label{DispersionTM}
+\end{equation}
+avec $m$ un entier positif ou nul correspondant au numéro du mode.
+
+\begin{question}
+Reprendre les questions de l'étude analytique en polarisation TE, en les appliquant au cas TM.
+\end{question}
+
+\begin{question}
+Comparez l'allure des modes obtenus en TE et en TM.
+\end{question}
+
+
+\subsection{Discrétisation de l'équation d'ondes}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Lors de la modélisation numérique, le calcul de $E_x$ aux points situés de part et d'autre de l'interface ne pourra donc pas être mené avec l'équation calculée en question \ref{q:laplacien}. En effet, contrairement au cas TE, le champ $E$ est discontinu entre ces points.
+
+\fig{tm}{9}{Discrétisation en volumes finis : relation entre les segments discrétisés et les abscisses physiques. Les segments sont en réalité jointifs mais ont été disjoints sur le schéma pour le rendre plus lisible.}
+ 
+Il nous faut donc écrire une nouvelle expression discrétisée de l'équation d'onde qui prenne en compte les conditions de passage des interfaces pour le champ $E=E_x$. On repart de l'équation d'ondes \ref{Helm}, que l'on va intégrer sur un volume de contrôle (voir figure \ref{fig:tm} pour les notations) :
+\begin{equation}
+    \left(\frac{\lambda}{2 \pi} \right)^2 
+    \int_{-h/2^+}^{h/2^-}{\partial_x^2 E\; dx} + n_i^2 \int_{-h/2^+}^{h/2^-}{E dx} = n_{ef\!f}^2 \int_{-h/2^+}^{h/2^-}{E dx}
+\end{equation}
+Notons que l'intégration s'effectue à l'intérieur du segment de contrôle, de sorte que l'indice de réfraction est constant et vaut $n_i$. On peut expliciter la première intégrale intervenant dans l'équation précédente et simplifier les deux suivantes en supposant que le champ $E$ varie peu dans un segment donné \footnote{Les interfaces se situent en extrémité de segment et une éventuelle discontinuité du champ ne peut donc pas avoir lieu dans le domaine d'intégration}.
+\begin{equation} \label{eq:tm1}
+    \left(\frac{\lambda}{2 \pi} \right)^2 
+    \left[ \left(\partial_xE\right)_{h/2^-} - \left(\partial_xE\right)_{-h/2^+} \right] + n_i^2 E_i h = n_{ef\!f}^2 E_i h
+\end{equation}
+Pour obtenir les dérivées du champ $E$ aux bords du segment, nous allons utiliser les conditions de passage. Celles-ci s'écrivent :
+\begin{align}
+    n_i^2E_{h/2^-} &= n_{i+1}^2 E_{h/2^+} \label{eq:pass1}\\
+    \left(\partial_xE\right)_{h/2^-} &= \left(\partial_xE\right)_{h/2^+} \label{eq:pass2}
+\end{align}
+\begin{question}
+Démontrez la première équation de passage \ref{eq:pass1}.
+\end{question}
+\begin{question}
+La seconde équation de passage \ref{eq:pass2} correspond à la condition de continuité de la composante selon $z$ du champ électrique. En partant le l'équation de Maxwell : div(\textbf{D})=0,  démontrez cette équation \ref{eq:pass2} (rappel : dans toute cette section sur les modes TM, la composante $E_x$ du champ électrique est notée $E$).
+\end{question}
+Les équations de passage font intervenir la valeur du champ et de sa dérivée en $h/2^+$, qu'il nous faut exprimer en fonction d'autres grandeurs présentes dans l'équation \ref{eq:tm1}. Pour cela, on utilise les développements limités suivants :
+\begin{align}
+    E_i = E_{h/2^-} - \frac{h}{2}  \left(\partial_xE\right)_{h/2^-} \nonumber\\
+    E_{i+1} =  E_{h/2^+} + \frac{h}{2}  \left(\partial_xE\right)_{h/2^+} \label{eq:dl}
+\end{align}
+
+En combinant les équations \ref{eq:dl} avec les conditions de continuité \ref{eq:pass1} et \ref{eq:pass2}, il est possible de calculer l'expression des dérivées du champ en $-h/2^+$ :
+\begin{align}
+    \left(\partial_xE\right)_{h/2^-} = \frac{2}{h} \frac{n_{i+1}^2E_{i+1}-n_i^2E_i}{n_i^2+n_{i+1}^2} \label{eq:derivee1}\\
+    \left(\partial_xE\right)_{-h/2^+} = \frac{2}{h} \frac{n_i^2E_i-n_{i-1}^2E_{i-1}}{n_i^2+n_{i-1}^2} \label{eq:derivee2}
+\end{align}
+
+\begin{question}
+Démontrer les expressions \ref{eq:derivee1} et \ref{eq:derivee2}
+\end{question}
+
+Pour finir, on injecte les expressions des dérivées \ref{eq:derivee1} et \ref{eq:derivee2} dans l'équation d'ondes \ref{eq:tm1}. On obtient alors l'expression de l'équation d'ondes discrétisée suivante :
+\begin{align}
+    \left(\frac{\lambda}{2 \pi} \right)^2 \frac{2}{h^2}
+    \frac{n_{i+1}^2}{n_i^2+n_{i+1}^2} E_{i+1} \;+\; n_i^2\left[ 1- \left(\frac{\lambda}{2 \pi} \right)^2 \frac{2}{h^2} \left( \frac{1}{n_i^2+n_{i+1}^2} + \frac{1}{n_i^2+n_{i-1}^2} \right) \right] E_i& \nonumber \\ +\; \left(\frac{\lambda}{2 \pi} \right)^2 \frac{2}{h^2}
+    \frac{n_{i-1}^2}{n_i^2+n_{i-1}^2} E_{i-1} &= n_{ef\!f}^2 E_i
+\end{align}
+
+\subsection{Solveur de modes TM}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{question}
+ En suivant la même procédure que pour les modes TE, développez un programme permettant le calcul des modes TM (calcul de E(x) et de l'indice effectif $n_{ef\!f}$).
+\end{question}
+
+\begin{question}
+Comparez les résultats obtenus à ceux prédits par le calcul analytique et concluez sur la validité de l'approche numérique.
+\end{question}
+
+\begin{question}
+Quels sont selon vous les avantages et inconvénients de la méthode numérique par rapport au calcul analytique.
+\end{question}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{Référence}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%[1] M. S. Stern, “Finite difference analysis of planar optical waveguides,” Prog. Electromagn. Res., vol. 10, pp. 123–186, 1995.
+
+%[2] M. S. Stern, “Semivectorial polarized finite difference method for optical waveguides with arbitrary index profiles,” Proc. Inst. Elect. Eng., J, vol. 135, no. 1, pp. 56–63, 1988.
+
+\end{document}
+
